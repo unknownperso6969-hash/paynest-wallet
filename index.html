@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wallet</title>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --ink: #1b2430;
+            --muted: #5d6978;
+            --line: #dfe4ea;
+            --accent: #0b6e5c;
+            --accent-ink: #ffffff;
+            --bad: #b3392f;
+            --good: #1f8a4c;
+            --warn: #a86b00;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #12171d;
+                --card: #1b222b;
+                --ink: #e8edf2;
+                --muted: #9aa6b4;
+                --line: #2b3541;
+                --accent: #3fc2a6;
+                --accent-ink: #06211b;
+                --bad: #ff8a80;
+                --good: #59d18a;
+                --warn: #f0b34a;
+            }
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif
+        }
+
+        main {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 24px 16px 48px
+        }
+
+        .balance {
+            padding: 8px 0 24px
+        }
+
+        .balance small {
+            color: var(--muted)
+        }
+
+        .balance strong {
+            display: block;
+            font-size: 44px;
+            line-height: 1.1;
+            letter-spacing: -.02em
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px
+        }
+
+        .tabs button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--ink);
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer
+        }
+
+        .tabs button[aria-selected="true"] {
+            background: var(--accent);
+            color: var(--accent-ink);
+            border-color: var(--accent)
+        }
+
+        form {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 20px
+        }
+
+        form[hidden] {
+            display: none
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            color: var(--muted);
+            margin: 14px 0 4px
+        }
+
+        label:first-of-type {
+            margin-top: 0
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--ink)
+        }
+
+        :is(input, select, button):focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px
+        }
+
+        .submit {
+            width: 100%;
+            margin-top: 18px;
+            padding: 12px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--accent);
+            color: var(--accent-ink);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        .submit:disabled {
+            opacity: .6;
+            cursor: wait
+        }
+
+        .msg {
+            min-height: 22px;
+            margin: 12px 0 0;
+            font-size: 14px
+        }
+
+        .msg.ok {
+            color: var(--good)
+        }
+
+        .msg.err {
+            color: var(--bad)
+        }
+
+        h2 {
+            font-size: 17px;
+            margin: 32px 0 8px
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--card)
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            font-size: 15px
+        }
+
+        li:last-child {
+            border-bottom: 0
+        }
+
+        li span {
+            color: var(--muted);
+            font-size: 13px;
+            display: block
+        }
+
+        .pending {
+            color: var(--warn)
+        }
+
+        .approved {
+            color: var(--good)
+        }
+
+        .rejected {
+            color: var(--bad)
+        }
+
+        .empty {
+            padding: 16px;
+            color: var(--muted)
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="balance">
+            <small>Available balance</small>
+            <strong id="balance">₹0</strong>
+        </section>
+
+        <div class="tabs" role="tablist">
+            <button role="tab" id="tab-deposit" aria-selected="true">Deposit</button>
+            <button role="tab" id="tab-withdraw" aria-selected="false">Withdraw</button>
+        </div>
+
+        <form id="deposit-form">
+            <label for="d-method">Payment method</label>
+            <select id="d-method" name="method">
+                <option>UPI</option>
+                <option>Bank transfer (IMPS/NEFT)</option>
+            </select>
+            <label for="d-amount">Amount (₹)</label>
+            <input id="d-amount" name="amount" type="number" min="1" step="any" inputmode="decimal" required>
+            <label for="d-utr">UTR / transaction ID</label>
+            <input id="d-utr" name="utr" type="text" minlength="12" maxlength="22" autocomplete="off" required>
+            <button class="submit" type="submit">Submit deposit</button>
+            <p class="msg" role="status"></p>
+        </form>
+
+        <form id="withdraw-form" hidden>
+            <label for="w-method">Payout method</label>
+            <select id="w-method" name="method">
+                <option>UPI</option>
+                <option>Bank transfer (IMPS/NEFT)</option>
+            </select>
+            <label for="w-amount">Amount (₹)</label>
+            <input id="w-amount" name="amount" type="number" min="1" step="any" inputmode="decimal" required>
+            <label for="w-details">UPI ID or bank account details</label>
+            <input id="w-details" name="details" type="text" autocomplete="off" required>
+            <button class="submit" type="submit">Request withdrawal</button>
+            <p class="msg" role="status"></p>
+        </form>
+
+        <h2>Recent activity</h2>
+        <ul id="history">
+            <li class="empty">No activity yet.</li>
+        </ul>
+    </main>
+
+    <script>
+        const $ = s => document.querySelector(s);
+        const rupee = n => '₹' + Number(n).toLocaleString('en-IN');
+
+        async function api(url, options) {
+            const res = await fetch(url, options);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Request failed. Try again.');
+            return data;
+        }
+
+        function setBalance(n) { $('#balance').textContent = rupee(n); }
+
+        async function refresh() {
+            try {
+                setBalance((await api('/api/balance')).balance);
+                const list = await api('/api/transactions');
+                $('#history').innerHTML = list.length ? list.map(t => `
+      <li>
+        <div>${t.type === 'deposit' ? 'Deposit' : 'Withdrawal'} · ${rupee(t.amount)}
+          <span>${new Date(t.createdAt).toLocaleString('en-IN')}</span></div>
+        <b class="${t.status}">${t.status}</b>
+      </li>`).join('') : '<li class="empty">No activity yet.</li>';
+            } catch (e) { /* server offline; try again on next poll */ }
+        }
+
+        function wireForm(form, url) {
+            const msg = form.querySelector('.msg');
+            const btn = form.querySelector('.submit');
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                btn.disabled = true;
+                msg.className = 'msg'; msg.textContent = '';
+                try {
+                    const body = Object.fromEntries(new FormData(form));
+                    const data = await api(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    msg.classList.add('ok'); msg.textContent = data.message;
+                    if (data.balance !== undefined) setBalance(data.balance); // withdrawals update instantly
+                    form.reset();
+                    refresh();
+                } catch (err) {
+                    msg.classList.add('err'); msg.textContent = err.message;
+                } finally { btn.disabled = false; }
+            });
+        }
+        wireForm($('#deposit-form'), '/api/deposit');
+        wireForm($('#withdraw-form'), '/api/withdraw');
+
+        function showTab(which) {
+            const dep = which === 'deposit';
+            $('#deposit-form').hidden = !dep;
+            $('#withdraw-form').hidden = dep;
+            $('#tab-deposit').setAttribute('aria-selected', dep);
+            $('#tab-withdraw').setAttribute('aria-selected', !dep);
+        }
+        $('#tab-deposit').onclick = () => showTab('deposit');
+        $('#tab-withdraw').onclick = () => showTab('withdraw');
+
+        refresh();
+        setInterval(refresh, 5000); // picks up admin approvals without a page reload
+    </script>
+</body>
+
+</html>
